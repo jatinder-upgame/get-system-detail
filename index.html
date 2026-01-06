@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>System Information</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            padding: 20px;
+        }
+        .box {
+            background: #1e293b;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🖥 System Information</h1>
+
+<div id="info"></div>
+
+<script>
+async function getGPU() {
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl");
+    if (!gl) return "Not available";
+
+    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+    return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+}
+
+async function getIP() {
+    try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+    } catch {
+        return "Not available";
+    }
+}
+
+async function loadSystemInfo() {
+    const info = {
+        OS: navigator.platform,
+        Browser: navigator.userAgent,
+        Language: navigator.language,
+        CPU_Cores: navigator.hardwareConcurrency,
+        RAM_GB: navigator.deviceMemory || "Not available",
+        Screen: `${screen.width} x ${screen.height}`,
+        ColorDepth: screen.colorDepth,
+        PixelRatio: window.devicePixelRatio,
+        Timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        Online: navigator.onLine,
+        NetworkSpeed: navigator.connection?.downlink + " Mbps",
+        TouchSupport: "ontouchstart" in window,
+        GPU: await getGPU(),
+        IP_Address: await getIP()
+    };
+
+    let html = "";
+    for (let key in info) {
+        html += `<div class="box"><b>${key}</b>: ${info[key]}</div>`;
+    }
+
+    document.getElementById("info").innerHTML = html;
+}
+
+loadSystemInfo();
+</script>
+
+</body>
+</html>
