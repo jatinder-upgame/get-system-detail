@@ -1,75 +1,91 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>System Information</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #0f172a;
-            color: white;
-            padding: 20px;
-        }
-        .box {
-            background: #1e293b;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-        }
-    </style>
+  <title>Device Fingerprint & System Info</title>
+
+  <!-- FingerprintJS -->
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background:#020617;
+      color:white;
+      padding:20px;
+    }
+    h1 {
+      color:#38bdf8;
+    }
+    .box {
+      background:#0f172a;
+      padding:12px;
+      margin:8px 0;
+      border-radius:8px;
+      word-break: break-all;
+    }
+  </style>
 </head>
 <body>
 
-<h1>🖥 System Information</h1>
-
-<div id="info"></div>
+<h1>🖥 Device Identity & System Info</h1>
+<div id="info">Loading...</div>
 
 <script>
 async function getGPU() {
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl");
-    if (!gl) return "Not available";
-
-    const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
-    return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+  const canvas = document.createElement("canvas");
+  const gl = canvas.getContext("webgl");
+  if (!gl) return "Not Available";
+  const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+  return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
 }
 
 async function getIP() {
-    try {
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        return data.ip;
-    } catch {
-        return "Not available";
-    }
+  try {
+    const res = await fetch("https://api.ipify.org?format=json");
+    const data = await res.json();
+    return data.ip;
+  } catch {
+    return "Not Available";
+  }
 }
 
-async function loadSystemInfo() {
-    const info = {
-        OS: navigator.platform,
-        Browser: navigator.userAgent,
-        Language: navigator.language,
-        CPU_Cores: navigator.hardwareConcurrency,
-        RAM_GB: navigator.deviceMemory || "Not available",
-        Screen: `${screen.width} x ${screen.height}`,
-        ColorDepth: screen.colorDepth,
-        PixelRatio: window.devicePixelRatio,
-        Timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        Online: navigator.onLine,
-        NetworkSpeed: navigator.connection?.downlink + " Mbps",
-        TouchSupport: "ontouchstart" in window,
-        GPU: await getGPU(),
-        IP_Address: await getIP()
-    };
-
-    let html = "";
-    for (let key in info) {
-        html += `<div class="box"><b>${key}</b>: ${info[key]}</div>`;
-    }
-
-    document.getElementById("info").innerHTML = html;
+async function getDeviceID() {
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+  return result.visitorId;
 }
 
-loadSystemInfo();
+async function loadData() {
+  const deviceId = await getDeviceID();
+  const gpu = await getGPU();
+  const ip = await getIP();
+
+  const data = {
+    "Device ID": deviceId,
+    "IP Address": ip,
+    "Operating System": navigator.platform,
+    "Browser": navigator.userAgent,
+    "CPU Cores": navigator.hardwareConcurrency,
+    "RAM (GB)": navigator.deviceMemory || "Not Available",
+    "Screen": `${screen.width} x ${screen.height}`,
+    "Pixel Ratio": window.devicePixelRatio,
+    "GPU": gpu,
+    "Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    "Language": navigator.language,
+    "Online": navigator.onLine,
+    "Network Speed": navigator.connection?.downlink + " Mbps",
+    "Touch Support": "ontouchstart" in window
+  };
+
+  let html = "";
+  for (let k in data) {
+    html += `<div class="box"><b>${k}</b>: ${data[k]}</div>`;
+  }
+
+  document.getElementById("info").innerHTML = html;
+}
+
+loadData();
 </script>
 
 </body>
